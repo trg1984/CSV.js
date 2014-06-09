@@ -1,0 +1,65 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>CSV file test</title>
+        <link rel="stylesheet" href="style/page.css" />
+        <script src="jquery.js"></script>
+        <script src="CSV.js"></script>
+        <script>
+        
+			function addCSVLoader(place, callback) {
+				if (window.File && window.FileReader && window.FileList && window.Blob) {
+					
+					function onSelectedFile(event) {
+						
+						// Get list of files
+						var files = event.target.files;
+						resultArray = [];
+						var pendingFileCount = files.length;
+						var __moveOn = function() {
+							--pendingFileCount;
+							if (pendingFileCount === 0) callback.call(window, resultArray);
+						} 
+					
+						// Loop through the FileList.
+						for (var i = 0, f; f = files[i]; i++) {
+							
+							// Initialize a reader for the current file.
+							var reader = new FileReader();
+							
+							// Load handler.
+							reader.onload = function(e) {
+								resultArray.push( new CSVFile(e.target.result) );
+								__moveOn();
+							}
+
+							// Initialize loading.
+							reader.readAsText(f);
+						}
+					}
+
+					// Add a select listener on all of the file dialogs.
+					place.on('change', onSelectedFile);
+				} else {
+					throw('The File API is not supported. Update your browser');
+				}
+			}
+			
+			var onLoadDone = function(fileArr) {
+				console.log('got files: ', fileArr);
+			}
+			
+			$(document).ready(
+				function(e) {
+					addCSVLoader($('input[type="file"]'), onLoadDone);
+				}
+			);
+        </script>
+    </head>
+    <body>
+        <h1>CSV file test</h1>
+        File Loader<p />
+		Select a CSV file to import:<p />
+		<input type="file" name="files[]" multiple />
+    </body>
+</html>
