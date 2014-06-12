@@ -32,6 +32,7 @@ CSVFile.prototype.import = function(content) {
 	
 	var i = 0;
 	var row = 0;
+	var columnCount = null;
 	while ( (i < this.maxParseCount) && (temp.length > 0) ) {
 		
 		//console.log(i, row, currentMode, matched, primary, secondary, temp.substr(0, 20));
@@ -57,9 +58,12 @@ CSVFile.prototype.import = function(content) {
 						secondary = "";
 						
 						if ((matched === this.rowSeparator) && ((this.data[row].length > 0) || this.keepEmptyRows)) {
-							
-							++row;
-							this.data.push([]);
+							if ((row === 0) || (columnCount === this.data[row].length)) {
+								columnCount = this.data[0].length;
+								++row;
+								this.data.push([]);
+							}
+							else throw('row lengths differ from each other.');
 						}
 						
 					} break;
@@ -161,6 +165,23 @@ CSVFile.prototype.export = function(asObject) {
 		return content;
 	}
 	
+}
+
+CSVFile.prototype.setRow = function(index, arr) {
+	var row = this.data[index];
+	
+	// Check that arr length is a multiple of the row length.
+	if ((row.length / arr.length - (row.length / arr.length | 0)) === 0) {
+		for (var i = 0; i < row.length; ++i) row[i] = arr[i % arr.length];
+	} else throw('Array length not multiple of row length.');
+}
+
+CSVFile.prototype.setColumn = function(index, arr) {
+	
+	// Check that arr length is a multiple of the row length.
+	if ((this.data.length / arr.length - (this.data.length / arr.length | 0)) === 0) {
+		for (var i = 0; i < this.data.length; ++i) this.data[i][index] = arr[i % arr.length];
+	} else throw('Array length not multiple of column length.');
 }
 
 CSVFile.prototype.getRow = function(index) {
