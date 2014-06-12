@@ -13,7 +13,7 @@ handling.
 TODO
 ----
 
-See current issuelist on the [project's GitHub page](https://github.com/trg1984/CSV.js/issues?state=open)
+See current issue list on the [project's GitHub page](https://github.com/trg1984/CSV.js/issues?state=open)
 
 
 
