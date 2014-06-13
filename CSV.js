@@ -10,8 +10,8 @@ function CSVFile(content, config) {
 	this.decimalSeparatorStr = '.';
     this.quote =  /^\"/;
 	this.quoteStr =  '"';
-    this.escape = /^\\/;
-	this.escapeStr = "\\";
+    this.escape = /^\"\"/;
+	this.escapeStr = '""';
 	this.number = /^\d+/;
 	this.rowSeparator = /^\r?\n/;
 	this.rowSeparatorStr = "\r\n";
@@ -43,6 +43,7 @@ CSVFile.prototype.import = function(content) {
 	var matched = null;
 	
 	var __addCell = function() {
+		if (primary.trim() === "") currentType = 'string';
 		var item = currentType === 'int' ? primary | 0 : currentType === 'string' ? primary : (primary | 0) + (secondary | 0) * Math.pow(10, -secondary.length);
 		
 		self.data[row].push(item);
@@ -117,21 +118,33 @@ CSVFile.prototype.import = function(content) {
 			
 			var firstQuote = temp.search(this.quote);
 			var firstEscape = temp.search(this.escape);
-			if (firstQuote === -1) firstQuote = Number.MAX_VALUE;
-			if (firstEscape === -1) firstEscape = Number.MAX_VALUE;
+			if (firstQuote === -1) firstQuote = temp.length;
+			if (firstEscape === -1) firstEscape = temp.length;
 			
-			var leap = firstEscape < firstQuote ? firstEscape + temp.match(this.escape)[0].length + 1 : firstQuote === 0 ? temp.match(this.quote)[0].length : 1;
+			/*
+			 -jossei ole, leap = 1
+			 -jos escape olemassa, ota se
+			 -muuten, jos quote olemassa, ota se
+			 -muuten leap = 1
+			 */
+			
+			var leap;
+			if (firstEscape < temp.length) leap = firstEscape + temp.match(this.escape)[0].length;
+			else if (firstQuote < temp.length) leap = firstQuote + temp.match(this.quote)[0].length;
+			else leap = 1;
+			
 			matched = temp.substr(0, leap);
 			
-			// For a well defined file, variable 'matched' now contains either (a) one escaped symbol, (b) one quote, or (c) one character.
-			
-			// If we found a quote, we are done, and we need to change all of the escaped characters to regular ones, and move back to main block.
-			if (matched.search(this.quote) >= 0) {
+			// For a well defined file, variable 'matched' now contains either (a) an escaped quote, (b) one quote, or (c) one character.
+			if (matched.search(this.escape) >= 0) primary += this.quoteStr;
+			else if (matched.search(this.quote) >= 0) {
+				/*
 				do {
 					primaryOld = primary;
 					if (primary.search(this.escape) >= 0) primary = primary.replace(primary.match(this.escape)[0], "");
 					++i;
 				} while ((primaryOld !== primary) && (i < this.maxParseCount));
+				*/
 				currentMode = 'inMain';
 			}
 			else primary += matched;
