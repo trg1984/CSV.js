@@ -1,8 +1,8 @@
 CSV.js
 ======
 
-Adds CSV file format import and export support to JavaScript. JQuery is not (and never will be)
-a dependency for using CSV.js. It is included here to ease the demonstration of the library.
+Fully [RFC 4180](http://www.ietf.org/rfc/rfc4180.txt) compliant CSV file format importer, exporter and handler.
+CSV.js is written in pure JavaScript and it does not have any dependencies on other libraries (and it never will).
 
 Licence
 -------
@@ -10,10 +10,6 @@ Licence
 MIT licence, although I'd appreciate if you sent me your modifications if they improve on CSV file
 handling.
 
-TODO
-----
-
-See current issue list on the [project's GitHub page](https://github.com/trg1984/CSV.js/issues?state=open)
 
 
 

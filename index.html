@@ -3,7 +3,8 @@
         <meta charset="utf-8" />
         <title>CSV file test</title>
         <link rel="stylesheet" href="style/page.css" />
-        <script src="jquery.js"></script>
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+		<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
         <script src="CSV.js"></script>
         <script>
         
@@ -47,6 +48,7 @@
 			
 			var onLoadDone = function(fileArr) {
 				console.log('got files: ', fileArr);
+				recent = fileArr; // Global for testing purposes.
 			}
 			
 			$(document).ready(
