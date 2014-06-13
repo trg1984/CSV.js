@@ -4,14 +4,20 @@ function CSVFile(content, config) {
 	this.charset = 'utf-8';
 	this.hasRowNames = true;
 	this.hasColumnNames = true;
-    this.columnSeparator = ',';
-    this.decimalSeparator = '.';
-    this.quote =  '"';
-    this.escape = '\\';
-	this.rowSeparator = '\n';
+    this.columnSeparator = /^\,/;
+	this.columnSeparatorStr = ',';
+    this.decimalSeparator = /^\./;
+	this.decimalSeparatorStr = '.';
+    this.quote =  /^\"/;
+	this.quoteStr =  '"';
+    this.escape = /^\\/;
+	this.escapeStr = "\\";
+	this.number = /^\d+/;
+	this.rowSeparator = /^\r?\n/;
+	this.rowSeparatorStr = "\r\n";
 	this.keepEmptyRows = false;
 	this.data = [[]];
-	this.maxParseCount = 100000;
+	this.maxParseCount = 1000000;
 	
 	// Copy the configuration over the default setup.
     if (typeof(config) !== 'undefined') for (var item in config) this[item] = config[item];
@@ -33,54 +39,73 @@ CSVFile.prototype.import = function(content) {
 	var i = 0;
 	var row = 0;
 	var columnCount = null;
-	while ( (i < this.maxParseCount) && (temp.length > 0) ) {
+	var self = this;
+	var matched = null;
+	
+	var __addCell = function() {
+		var item = currentType === 'int' ? primary | 0 : currentType === 'string' ? primary : (primary | 0) + (secondary | 0) * Math.pow(10, -secondary.length);
 		
-		//console.log(i, row, currentMode, matched, primary, secondary, temp.substr(0, 20));
+		self.data[row].push(item);
+		currentType = 'int';
+		primary = "";
+		secondary = "";
+		
+		if ((matched !== null) && (matched.search(self.rowSeparator) >= 0) && ((self.data[row].length > 0) || self.keepEmptyRows)) {
+			if ((row === 0) || (columnCount === self.data[row].length)) {
+				columnCount = self.data[0].length;
+				++row;
+				self.data.push([]);
+			}
+			else throw('row lengths differ from each other on row ' + row);
+		}
+		
+	}
+	
+	while ( (i < this.maxParseCount) && (temp.length > 0) ) {
 		
 		if (currentMode === 'inMain') {
 			
-			var searchBlock = '^(\\d+|' + this.columnSeparator + '|' + this.quote + '|' + this.decimalSeparator + '|' + this.rowSeparator + ')';
-			var matched = temp.match(searchBlock);
+			var searchBlock = [
+				this.number,
+				this.columnSeparator,
+				this.quote,
+				this.decimalSeparator,
+				this.rowSeparator
+			];
+			
+			var check = Number.MAX_VALUE;
+			var closest = -1;
+			matched = null;
+			for (var item in searchBlock) {
+				var index = temp.search(searchBlock[item]);
+				if ((index >= 0) && (index < check)) {
+					matched = temp.match(searchBlock[item]);
+					
+					// Reserved for future use.
+					check = index;
+					closest = item;
+				}
+			}
+			
 			if (matched !== null) {
 				matched = matched[0];
-				//console.log(matched, temp);
 				
 				temp = temp.substr(matched.length);
-				//console.log(temp);
 				
-				switch ( matched ) {
-					case this.columnSeparator: case this.rowSeparator: {
-						var item = currentType === 'int' ? primary | 0 : currentType === 'string' ? primary : (primary | 0) + (secondary | 0) * Math.pow(10, -secondary.length);
-						
-						this.data[row].push(item);
-						currentType = 'int';
-						primary = "";
-						secondary = "";
-						
-						if ((matched === this.rowSeparator) && ((this.data[row].length > 0) || this.keepEmptyRows)) {
-							if ((row === 0) || (columnCount === this.data[row].length)) {
-								columnCount = this.data[0].length;
-								++row;
-								this.data.push([]);
-							}
-							else throw('row lengths differ from each other.');
-						}
-						
-					} break;
-					case this.quote: {
-						currentMode = 'inQuote';
-						currentType = 'string';
-					} break;
-					case this.decimalSeparator: {
-						currentType = 'float';
-					} break;
-					default: {
-						if (currentType === 'float') secondary = matched;
-						else {
-							if ((currentMode !== 'string') && (matched.search(/^\d+$/) < 0)) currentType = 'string';
-							primary += matched;
-						}
-					} break;
+				if ((matched.search(this.columnSeparator) >= 0) || (matched.search(this.rowSeparator) >= 0)) __addCell();
+				else if (matched.search(this.quote) >= 0) {
+					currentMode = 'inQuote';
+					currentType = 'string';
+				}
+				else if (matched.search(this.decimalSeparator) >= 0) {
+					currentType = 'float';
+				}
+				else {
+					if (currentType === 'float') secondary = matched;
+					else {
+						if ((currentMode !== 'string') && (matched.search(/^\d+$/) < 0)) currentType = 'string';
+						primary += matched;
+					}
 				}
 			} else {
 				currentType = 'string';
@@ -90,16 +115,23 @@ CSVFile.prototype.import = function(content) {
 		} 
 		else if (currentMode === 'inQuote') {
 			
-			var firstQuote = temp.indexOf(this.quote);
-			var firstEscape = temp.indexOf(this.escape);
+			var firstQuote = temp.search(this.quote);
+			var firstEscape = temp.search(this.escape);
 			if (firstQuote === -1) firstQuote = Number.MAX_VALUE;
 			if (firstEscape === -1) firstEscape = Number.MAX_VALUE;
 			
-			var leap = firstEscape < firstQuote ? firstEscape + this.escape.length + 1 : firstQuote === 0 ? this.quote.length : firstQuote;
+			var leap = firstEscape < firstQuote ? firstEscape + temp.match(this.escape)[0].length + 1 : firstQuote === 0 ? temp.match(this.quote)[0].length : 1;
 			matched = temp.substr(0, leap);
 			
-			if (matched === this.quote) {
-				do { primaryOld = primary; primary = primary.replace(this.escape, ""); ++i; } while ((primaryOld !== primary) && (i < this.maxParseCount));
+			// For a well defined file, variable 'matched' now contains either (a) one escaped symbol, (b) one quote, or (c) one character.
+			
+			// If we found a quote, we are done, and we need to change all of the escaped characters to regular ones, and move back to main block.
+			if (matched.search(this.quote) >= 0) {
+				do {
+					primaryOld = primary;
+					if (primary.search(this.escape) >= 0) primary = primary.replace(primary.match(this.escape)[0], "");
+					++i;
+				} while ((primaryOld !== primary) && (i < this.maxParseCount));
 				currentMode = 'inMain';
 			}
 			else primary += matched;
@@ -108,6 +140,8 @@ CSVFile.prototype.import = function(content) {
 		}
 		++i;
 	}
+	
+	if ((primary !== "") || (secondary !== "")) __addCell();
 	
 	// Remove trailing empty row if such rows should not be kept.
 	if ((this.data[row].length === 0) && !this.keepEmptyRows) {
@@ -151,20 +185,19 @@ CSVFile.prototype.export = function(asObject) {
 		for (var i = 0; i < tempData.length; ++i) {
 			for (var j = 0; j < tempData[i].length; ++j) {
 				switch (typeof(tempData[i][j])) {
-					case 'string': content += this.quote + tempData[i][j] + this.quote; break;
+					case 'string': content += this.quoteStr + tempData[i][j] + this.quoteStr; break;
 					case 'number': {
 						if (tempData[i][j] === (tempData[i][j] | 0)) content += '' + tempData[i][j];
-						else content += ("" + tempData[i][j]).replace('.', this.decimalSeparator);
+						else content += ("" + tempData[i][j]).replace('.', this.decimalSeparatorStr);
 					} break;
 				}
-				content += this.columnSeparator;
+				content += this.columnSeparatorStr;
 			}
-			content += this.rowSeparator;
+			content += this.rowSeparatorStr;
 		}
 		
 		return content;
 	}
-	
 }
 
 CSVFile.prototype.setRow = function(index, arr) {
