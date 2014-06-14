@@ -21,13 +21,25 @@ Create a CSV file with two cells, 'Hello' and 'world!' on a single row:
 
 	var csv = new CSVFile('Hello,world!');
 
-Fetch the previously created row from the file:
+Fetch the previously created row from the object:
 
 	var row = csv.getRow(0).data; // ['Hello', 'world!']
 
 Columns can be fetched in the same way:
 
 	var column = csv.getColumn(0).data; // ['Hello']
+	
+And so can individual cells:
+
+	var cell = csv.getCell(0, 0).data; // ['Hello']
+
+Rows, columns and individual cells can also be set, using ```setRow(index, arr)```, ```setColumn(index, arr)``` and ```setCell(row, column, value)```, respectively:
+
+	var grid = new CSVFile(',,,,,,\n,,,,,,\n,,,,,,\n,,,,,,\n,,,,,,'); // empty 5-by-6 grid.
+	
+	grid.setRow(0, ["first row"]); // Fill the first row with "first row".
+	grid.setColumn(0, ["first column"]); // Fill the first column in the same way.
+	grid.setCell(3, 3, ["individual cell"]); // Set individual cell content.
 
 CSVFile constructor has a second (optional) parameter, config. Config allows to overwrite, change or add _any_ portion
 of the CSVFile object and it is explicitly meant to do so. The currently supported parameters are listed in the table
@@ -42,7 +54,7 @@ below:
 Using these options one can handle the cases where the CSV file has row and column labels:
 
 	var csv2 = new CSVFile(',Column 1,Column 2\nRow 1,Hello,world!', {hasRowNames: true, hasColumnNames: true});
-	var row2 = csv.getRow(0); // An object with proper row and column names.
+	var rowWithNames = csv.getRow(0); // An object with proper row and column names.
 
 The file content can be imported separately from the constructor by calling ```CSVFile.import(content)```. Assuming you
 already created ´´´csv´´´ in the first example, you can import new content over it:

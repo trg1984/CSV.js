@@ -237,6 +237,18 @@ CSVFile.prototype.setColumn = function(index, arr) {
 	} else throw('Array length not multiple of column length.');
 }
 
+CSVFile.prototype.setCell = function(row, column, value) {
+	this.data[row][column] = value;
+}
+
+CSVFile.prototype.getCell = function(row, column) {
+	return {
+		rowName: this.rowNames ? this.rowNames[row] : null,
+		colName: this.columnNames ? this.columnNames[column] : null,
+		data: this.data[row][column][0]
+	}
+}
+
 CSVFile.prototype.getRow = function(index) {
 	return {
 		rowNames: this.rowNames ? [this.rowNames[index]] : null,
