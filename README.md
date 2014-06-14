@@ -33,14 +33,11 @@ CSVFile constructor has a second (optional) parameter, config. Config allows to 
 of the CSVFile object and it is explicitly meant to do so. The currently supported parameters are listed in the table
 below:
 
-| Parameter      | Default value | Description                                                        |
-|----------------|---------------|--------------------------------------------------------------------|
-| charset        | utf-8         | Defines the character set of  the CSV file. Stores it to be passed |
-|                |               | as metadata in HTTP header.                                        |
-| hasRowNames    | false         | Defines if the imported file has row names. Row names are          |
-|                |               | always fetched from the leftmost column.                           |
-| hasColumnNames | false         | Same as hasRowNames, but for columns. If true, first row           |
-|                |               | is selected as column labels.                                      |
+| Parameter      | Default value | Description                                                                                        |
+|----------------|---------------|----------------------------------------------------------------------------------------------------|
+| charset        | utf-8         | Defines the character set of  the CSV file. Stores it to be passed as metadata in HTTP header.     |
+| hasRowNames    | false         | Defines if the imported file has row names. Row names are always fetched from the leftmost column. |
+| hasColumnNames | false         | Same as hasRowNames, but for columns. If true, first row is selected as column labels.             |
 
 Using these options one can handle the cases where the CSV file has row and column labels:
 
