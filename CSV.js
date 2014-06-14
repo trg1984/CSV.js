@@ -1,9 +1,7 @@
 function CSVFile(content, config) {
-    this.type = null;
-    this.firstLine = 0;
 	this.charset = 'utf-8';
-	this.hasRowNames = true;
-	this.hasColumnNames = true;
+	this.hasRowNames = false;
+	this.hasColumnNames = false;
     this.columnSeparator = /^\,/;
 	this.columnSeparatorStr = ',';
     this.decimalSeparator = /^\./;
@@ -17,12 +15,11 @@ function CSVFile(content, config) {
 	this.rowSeparatorStr = "\r\n";
 	this.keepEmptyRows = false;
 	this.data = [[]];
-	this.maxParseCount = 1000000;
 	
 	// Copy the configuration over the default setup.
     if (typeof(config) !== 'undefined') for (var item in config) this[item] = config[item];
 	
-    this.import(content);
+    if (typeof(content) === 'string') this.import(content);
 }
 
 CSVFile.prototype.import = function(content) {
@@ -41,6 +38,7 @@ CSVFile.prototype.import = function(content) {
 	var columnCount = null;
 	var self = this;
 	var matched = null;
+	var maxParseCount = temp.length * 2;
 	
 	var __addCell = function() {
 		if (primary.trim() === "") currentType = 'string';
@@ -62,7 +60,7 @@ CSVFile.prototype.import = function(content) {
 		
 	}
 	
-	while ( (i < this.maxParseCount) && (temp.length > 0) ) {
+	while ( (i < maxParseCount) && (temp.length > 0) ) {
 		
 		if (currentMode === 'inMain') {
 			
@@ -99,7 +97,8 @@ CSVFile.prototype.import = function(content) {
 					currentType = 'string';
 				}
 				else if (matched.search(this.decimalSeparator) >= 0) {
-					currentType = 'float';
+					if (currentType === 'string') primary += this.decimalSeparatorStr;
+					else currentType = 'float';
 				}
 				else {
 					if (currentType === 'float') secondary = matched;
@@ -120,14 +119,7 @@ CSVFile.prototype.import = function(content) {
 			var firstEscape = temp.search(this.escape);
 			if (firstQuote === -1) firstQuote = temp.length;
 			if (firstEscape === -1) firstEscape = temp.length;
-			
-			/*
-			 -jossei ole, leap = 1
-			 -jos escape olemassa, ota se
-			 -muuten, jos quote olemassa, ota se
-			 -muuten leap = 1
-			 */
-			
+
 			var leap;
 			if (firstEscape < temp.length) leap = firstEscape + temp.match(this.escape)[0].length;
 			else if (firstQuote < temp.length) leap = firstQuote + temp.match(this.quote)[0].length;
@@ -137,16 +129,7 @@ CSVFile.prototype.import = function(content) {
 			
 			// For a well defined file, variable 'matched' now contains either (a) an escaped quote, (b) one quote, or (c) one character.
 			if (matched.search(this.escape) >= 0) primary += this.quoteStr;
-			else if (matched.search(this.quote) >= 0) {
-				/*
-				do {
-					primaryOld = primary;
-					if (primary.search(this.escape) >= 0) primary = primary.replace(primary.match(this.escape)[0], "");
-					++i;
-				} while ((primaryOld !== primary) && (i < this.maxParseCount));
-				*/
-				currentMode = 'inMain';
-			}
+			else if (matched.search(this.quote) >= 0) currentMode = 'inMain';
 			else primary += matched;
 			
 			temp = temp.substr(leap);
@@ -213,6 +196,30 @@ CSVFile.prototype.export = function(asObject) {
 	}
 }
 
+CSVFile.prototype.setSeparators = function(rowSep, columnSep, decimalSep, quoteSep) {
+	
+	var __escapeEachChar = function(s) {
+		result = "";
+		for (var i = 0; i < s.length; ++i) result += '\\' + s[i];
+		return result;
+	}
+	
+	this.rowSeparatorStr = rowSep;
+	this.rowSeparator = new RegExp('^' + __escapeEachChar(this.rowSeparatorStr));
+	
+	this.columnSeparatorStr = columnSep;
+	this.columnSeparator = new RegExp('^' + __escapeEachChar(this.columnSeparatorStr));
+	
+	this.decimalSeparatorStr = decimalSep;
+	this.decimalSeparator = new RegExp('^' + __escapeEachChar(this.decimalSeparatorStr));
+	
+	this.quoteStr = quoteSep;
+	this.quote = new RegExp('^' + __escapeEachChar(this.quoteStr));
+	
+	this.escapeStr = quoteSep + quoteSep;
+	this.escape = new RegExp('^' + __escapeEachChar(this.escapeStr));
+}
+
 CSVFile.prototype.setRow = function(index, arr) {
 	var row = this.data[index];
 	
@@ -232,19 +239,19 @@ CSVFile.prototype.setColumn = function(index, arr) {
 
 CSVFile.prototype.getRow = function(index) {
 	return {
-		rowNames: [this.rowNames[index]],
-		colNames: this.columnNames,
+		rowNames: this.rowNames ? [this.rowNames[index]] : null,
+		colNames: this.columnNames ? this.columnNames : null,
 		data: this.data[index]
 	}
 }
 
 CSVFile.prototype.getColumn = function(index) {
-	var temp = new Array(this.rowNames.length);
+	var temp = new Array(this.data.length);
 	for (var i = 0; i < temp.length; ++i) temp[i] = this.data[i][index];
 	
 	return {
-		rowNames: this.rowNames,
-		colNames: [this.columnNames[index]],
+		rowNames: this.rowNames ? this.rowNames : null,
+		colNames: this.columnNames ? [this.columnNames[index]] : null,
 		data: temp
 	}
 }
