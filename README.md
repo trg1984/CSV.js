@@ -35,11 +35,15 @@ And so can individual cells:
 
 Rows, columns and individual cells can also be set, using ```setRow(index, arr)```, ```setColumn(index, arr)``` and ```setCell(row, column, value)```, respectively:
 
-	var grid = new CSVFile(',,,,,,\n,,,,,,\n,,,,,,\n,,,,,,\n,,,,,,'); // empty 5-by-6 grid.
+	var grid = new CSVFile(',,,,,\n,,,,,\n,,,,,\n,,,,,\n,,,,,'); // empty 5-by-6 grid.
 	
-	grid.setRow(0, ["first row"]); // Fill the first row with "first row".
+	grid.setRow(0, ["red", "blue"]); // Fill the first row with alternating "red" and "blue".
 	grid.setColumn(0, ["first column"]); // Fill the first column in the same way.
 	grid.setCell(3, 3, ["individual cell"]); // Set individual cell content.
+
+As shown here with ```setRow()```, neither rows nor column replacements need to be of the same length as the actual
+element that is being replaced. It is enough that the element's length is a multiple of the replacement's length.
+The element is then filled by looping through the replacement over and over again.
 
 CSVFile constructor has a second (optional) parameter, config. Config allows to overwrite, change or add _any_ portion
 of the CSVFile object and it is explicitly meant to do so. The currently supported parameters are listed in the table
