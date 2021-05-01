@@ -3,15 +3,56 @@
         <meta charset="utf-8" />
         <title>CSV file test</title>
         <link rel="stylesheet" href="style/page.css" />
-        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-		<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
         <script src="CSV.js"></script>
         <script>
         
+			
+			
 			function addCSVLoader(place, callback) {
+				console.log('addCSVLoader()', place);
 				if (window.File && window.FileReader && window.FileList && window.Blob) {
 					
-					function onSelectedFile(event) {
+					function onSelectedFile(event, columnSeparatorType, quoteStringType, callback) {
+						console.log('onSelectedFile()', place, columnSeparatorType, quoteStringType, callback);
+						
+						var columnSeparator = /^\,/;
+						var columnSeparatorStr = ',';
+						var decimalSeparator = /^\./;
+						var decimalSeparatorStr = '.';
+						var quote =  /^\"/;
+						var quoteStr =  '"';
+						
+						switch (columnSeparatorType) {
+							case 'tab':
+								columnSeparator = /^\t/;
+								columnSeparatorStr = '\t';
+							break;
+							case 'semicolon':
+								columnSeparator = /^\;/;
+								columnSeparatorStr = ';';
+							break;
+							case 'space':
+								columnSeparator = /^ /;
+								columnSeparatorStr = ' ';
+							break;
+							case 'comma':
+							default:
+								columnSeparator = /^\,/;
+								columnSeparatorStr = ',';
+							break;
+						}
+						
+						switch (quoteStringType) {
+							case 'singlequote':
+								quote =  /^\'/;
+								quoteStr =  "'";
+							break;
+							case 'doublequote':
+							default:
+								quote =  /^\"/;
+								quoteStr =  '"';
+							break;
+						}
 						
 						// Get list of files
 						var files = event.target.files;
@@ -19,7 +60,10 @@
 						var pendingFileCount = files.length;
 						var __moveOn = function() {
 							--pendingFileCount;
-							if (pendingFileCount === 0) callback.call(window, resultArray);
+							if (pendingFileCount === 0) {
+								if (typeof(callback) === 'function') callback.call(window, resultArray);
+								else return resultArray;
+							}
 						} 
 					
 						// Loop through the FileList.
@@ -30,7 +74,19 @@
 							
 							// Load handler.
 							reader.onload = function(e) {
-								resultArray.push( new CSVFile(e.target.result) );
+								resultArray.push(
+									new CSVFile(
+										e.target.result,
+										{
+											// Config
+											columnSeparator: columnSeparator,
+											columnSeparatorStr: columnSeparatorStr,
+											//decimalSeparator: decimalSeparator,
+											//decimalSeparatorStr: decimalSeparatorStr,
+											quote: quote,
+											quoteStr: quoteStr
+										}
+									) );
 								__moveOn();
 							}
 
@@ -38,9 +94,20 @@
 							reader.readAsText(f);
 						}
 					}
-
+					
 					// Add a select listener on all of the file dialogs.
-					place.on('change', onSelectedFile);
+					place.forEach(
+						function(item, index) {
+							//console.log(item);
+							item.onchange = function(ev) {
+								onSelectedFile(
+									ev, 
+									document.querySelector('#columSeparatorTypeSelector1').value,	document.querySelector('#quoteStringTypeSelector1').value,
+									callback
+								);
+							}
+						}
+					);
 				} else {
 					throw('The File API is not supported. Update your browser');
 				}
@@ -51,16 +118,33 @@
 				recent = fileArr; // Global for testing purposes.
 			}
 			
-			$(document).ready(
-				function(e) {
-					addCSVLoader($('input[type="file"]'), onLoadDone);
-				}
-			);
+			var main = function(e) {
+				addCSVLoader(
+					document.querySelectorAll('input[type="file"]'),
+					onLoadDone
+				);
+			};
         </script>
     </head>
-    <body>
-        <h1>CSV file test</h1>
-        File Loader<p />
+    <body onload="main();">
+        <h1>RFC 4180 Compliant Client-Side CSV File Handler</h1>
+        This page demonstrates the usage of CSV file handler. It loads a CSV file from local hard drive and converts it to a CSVFile object in the browser. The output it printed in to the console (F12 in Windows to see it).<p />
+        <label>Column separator:</label><br />
+        <select id="columSeparatorTypeSelector1">
+			<option value="comma">Comma</option>
+			<option value="tab">Tab</option>
+			<option value="semicolon">Semicolon</option>
+			<option value="space">Space</option>
+			<!-- <option value="custom">Custom</option> -->
+        </select><p/>
+        <label>Quote string:</label><br />
+        <select id="quoteStringTypeSelector1">
+			<option value="doublequote">Double quote</option>
+			<option value="singlequote">Single quote</option>
+			<!-- <option value="custom">Custom</option> -->
+        </select><p/>
+        <label>Skip first N rows:</label><br />
+        <input type="text" pattern="\d*" value="0" /><p />
 		Select a CSV file to import:<p />
 		<input type="file" name="files[]" multiple />
     </body>

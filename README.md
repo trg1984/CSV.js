@@ -67,8 +67,8 @@ already created ´´´csv´´´ in the first example, you can import new content
 	csv.import(newContent);
 	var newRow = csv.getRow(0).data; // ['I think', 'therefore', 'I am.']
 
-Similarly, there exists an export function, ```CSVFile.export()```, which creates a saveable string in the same
-format in which the file was imported.
+Similarly, there exists an export function, ```CSVFile.export(asObject)```, which creates a saveable string in the same
+format in which the file was imported, or, if asObject is set, as a JSON object that can be used elsewhere in the application.
 
 CSV file format predates RFC 4180 by decades, and there exists a vast number of nearly compatible subformats that
 differ mainly in their separators. CSVFile is able to load such files by altering the different separators. Separators

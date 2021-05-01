@@ -15,11 +15,22 @@ function CSVFile(content, config) {
 	this.rowSeparatorStr = "\r\n";
 	this.keepEmptyRows = false;
 	this.data = [[]];
+	this.skipRowCount = 0;
 	
 	// Copy the configuration over the default setup.
     if (typeof(config) !== 'undefined') for (var item in config) this[item] = config[item];
 	
     if (typeof(content) === 'string') this.import(content);
+}
+
+CSVFile.prototype.createEmptyContent = function(rows, columns) {
+	this.data = new Array(rows);
+	for (var row = 0; row < rows; ++row) {
+		this.data[row] = new Array(columns);
+		for (var col = 0; col < columns; ++col) {
+			this.setCell(row, col, '');
+		}
+	}
 }
 
 CSVFile.prototype.import = function(content) {
@@ -41,6 +52,8 @@ CSVFile.prototype.import = function(content) {
 	var maxParseCount = temp.length * 2;
 	
 	var __addCell = function() {
+		// if (i < this.skipRowCount) return; // TODO not tested
+		
 		if (primary.trim() === "") currentType = 'string';
 		var item = currentType === 'int' ? primary | 0 : currentType === 'string' ? primary : (primary | 0) + (secondary | 0) * Math.pow(10, -secondary.length);
 		
@@ -245,7 +258,7 @@ CSVFile.prototype.getCell = function(row, column) {
 	return {
 		rowName: this.rowNames ? this.rowNames[row] : null,
 		colName: this.columnNames ? this.columnNames[column] : null,
-		data: this.data[row][column][0]
+		data: this.data[row][column]
 	}
 }
 
