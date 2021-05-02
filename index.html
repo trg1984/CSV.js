@@ -14,7 +14,7 @@
 				console.log('addCSVLoader()', place);
 				if (window.File && window.FileReader && window.FileList && window.Blob) {
 					
-					function onSelectedFile(event, columnSeparatorType, quoteStringType, callback) {
+					function onSelectedFile(event, columnSeparatorType, quoteStringType, skipRowCount, callback) {
 						console.log('onSelectedFile()', place, columnSeparatorType, quoteStringType, callback);
 						
 						var columnSeparator = /^\,/;
@@ -85,7 +85,8 @@
 										//decimalSeparator: decimalSeparator,
 										//decimalSeparatorStr: decimalSeparatorStr,
 										quote: quote,
-										quoteStr: quoteStr
+										quoteStr: quoteStr,
+										skipRowCount: skipRowCount
 									}
 								);
 								resultArray.push(csv);
@@ -104,7 +105,9 @@
 							item.onchange = function(ev) {
 								onSelectedFile(
 									ev, 
-									document.querySelector('#columSeparatorTypeSelector1').value,	document.querySelector('#quoteStringTypeSelector1').value,
+									document.querySelector('#columSeparatorTypeSelector1').value,
+									document.querySelector('#quoteStringTypeSelector1').value,
+									document.querySelector('#skipFirstNRowsCount1').value | 0,
 									callback
 								);
 							}
@@ -165,7 +168,7 @@
 			<!-- <option value="custom">Custom</option> -->
         </select><p/>
         <label>Skip first N rows:</label><br />
-        <input type="text" pattern="\d*" value="0" /><p />
+        <input type="text" pattern="\d*" value="0" id="skipFirstNRowsCount1" /><p />
 		Select a CSV file to import:<p />
 		<input type="file" name="files[]" multiple />
 		<div class="results"></div>

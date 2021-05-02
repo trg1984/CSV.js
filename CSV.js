@@ -13,6 +13,7 @@ function CSVFile(content, config) {
 	this.number = /^\d+/;
 	this.rowSeparator = /^\r?\n/;
 	this.rowSeparatorStr = "\r\n";
+	this.skipRowSeparator = /\r?\n/;
 	this.keepEmptyRows = false;
 	this.data = [[]];
 	this.skipRowCount = 0;
@@ -50,9 +51,9 @@ CSVFile.prototype.import = function(content) {
 	var self = this;
 	var matched = null;
 	var maxParseCount = temp.length * 2;
+	var skipCount = 0;
 	
 	var __addCell = function() {
-		// if (i < this.skipRowCount) return; // TODO not tested
 		
 		if (primary.trim() === "") currentType = 'string';
 		var item = currentType === 'int' ? primary | 0 : currentType === 'string' ? primary : (primary | 0) + (secondary | 0) * Math.pow(10, -secondary.length);
@@ -75,7 +76,33 @@ CSVFile.prototype.import = function(content) {
 	
 	while ( (i < maxParseCount) && (temp.length > 0) ) {
 		
-		if (currentMode === 'inMain') {
+		if ((currentMode === 'inMain') && (skipCount < this.skipRowCount)) {
+			
+			var searchBlock = [
+				this.skipRowSeparator
+			];
+			
+			var check = Number.MAX_VALUE;
+			var closest = -1;
+			matched = null;
+			for (var item in searchBlock) {
+				var index = temp.search(searchBlock[item]);
+				if ((index >= 0) && (index < check)) {
+					matched = temp.match(searchBlock[item]);
+					
+					// Reserved for future use.
+					check = index;
+					closest = item;
+				}
+			}
+			
+			if (matched !== null) {
+				temp = temp.substr(matched.index + matched.length + 1);
+			}
+			
+			++skipCount;
+		}
+		else if (currentMode === 'inMain') {
 			
 			var searchBlock = [
 				this.number,
