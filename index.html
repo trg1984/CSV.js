@@ -1,9 +1,11 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>CSV file test</title>
+        <title>RFC 4180 Compliant CSV File Handler</title>
         <link rel="stylesheet" href="style/page.css" />
+        <link rel="stylesheet" href="style/Chart.css" />
         <script src="CSV.js"></script>
+        <script src="Chart.js"></script>
         <script>
         
 			
@@ -74,19 +76,19 @@
 							
 							// Load handler.
 							reader.onload = function(e) {
-								resultArray.push(
-									new CSVFile(
-										e.target.result,
-										{
-											// Config
-											columnSeparator: columnSeparator,
-											columnSeparatorStr: columnSeparatorStr,
-											//decimalSeparator: decimalSeparator,
-											//decimalSeparatorStr: decimalSeparatorStr,
-											quote: quote,
-											quoteStr: quoteStr
-										}
-									) );
+								var csv = new CSVFile(
+									e.target.result,
+									{
+										// Config
+										columnSeparator: columnSeparator,
+										columnSeparatorStr: columnSeparatorStr,
+										//decimalSeparator: decimalSeparator,
+										//decimalSeparatorStr: decimalSeparatorStr,
+										quote: quote,
+										quoteStr: quoteStr
+									}
+								);
+								resultArray.push(csv);
 								__moveOn();
 							}
 
@@ -115,6 +117,25 @@
 			
 			var onLoadDone = function(fileArr) {
 				console.log('got files: ', fileArr);
+				
+				var resultsElem = document.querySelector('.results');
+				resultsElem.innerHTML = '';
+				
+				for (var i = 0; i < fileArr.length;++i) {
+					if ((fileArr[i].data.length > 0) && (fileArr[i].data[0].length > 0)) {
+						resultsElem.innerHTML += `<div data-result-index="${i}"></div><p />`;
+						var chart = new Chart(
+							resultsElem.querySelector(`[data-result-index="${i}"]`),
+							{
+								rows: fileArr[i].data.length,
+								cols: fileArr[i].data[i].length,
+								editable: true,
+								content: fileArr[i]
+							}
+						);
+					}
+				}
+				
 				recent = fileArr; // Global for testing purposes.
 			}
 			
@@ -128,7 +149,7 @@
     </head>
     <body onload="main();">
         <h1>RFC 4180 Compliant Client-Side CSV File Handler</h1>
-        This page demonstrates the usage of CSV file handler. It loads a CSV file from local hard drive and converts it to a CSVFile object in the browser. The output it printed in to the console (F12 in Windows to see it).<p />
+        This page demonstrates the usage of CSV file handler. It loads a CSV file from local hard drive and converts it to a CSVFile object in the browser.<p />
         <label>Column separator:</label><br />
         <select id="columSeparatorTypeSelector1">
 			<option value="comma">Comma</option>
@@ -147,5 +168,6 @@
         <input type="text" pattern="\d*" value="0" /><p />
 		Select a CSV file to import:<p />
 		<input type="file" name="files[]" multiple />
+		<div class="results"></div>
     </body>
 </html>

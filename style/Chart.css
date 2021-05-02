@@ -1,0 +1,58 @@
+.table {
+	display: inline-block;
+	overflow: auto;
+	/* max-height: 100%; */
+	/* max-width: 100%; */
+	position: relative;
+	top: 0;
+	left: 0;
+	
+	-webkit-user-select: none;  /* Chrome all / Safari all */
+	-moz-user-select: none;     /* Firefox all */
+	-ms-user-select: none;      /* IE 10+ */
+	user-select: none;          /* Likely future */   
+}
+
+.editable .table {
+	cursor: crosshair;
+}
+
+.row {
+	/*display: block;*/
+	white-space: nowrap;
+}
+
+.cell {
+	border: 3px solid transparent;
+	box-sizing:border-box;
+	/*display: inline-block;*/
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+	min-width: 5em;
+	height: 1.5em;
+	background-color: white;
+	padding: 0 0.3em;
+	font-family: Arial, sans-serif;
+	line-height: 1.5em;
+	vertical-align: top;
+}
+
+.cell.selected {
+	border: 2px solid black;
+}
+
+.editable .cell:hover {
+	border: 2px solid #888;
+}
+
+.cell input[type="text"] {
+	width: 100%;
+	height: 100%;
+	border: none;
+	margin: 0;
+	padding: 0;
+	background-color: transparent;
+	display: inline-block;
+	font: inherit;
+	line-height: 1.5em;
+}
